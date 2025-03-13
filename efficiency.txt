@@ -1,9 +1,0 @@
-activeTime=00:00:42
-idleTime=00:02:14
-overallEfficiency=0%
-appUsage=Productivity Monitoring Dashboard; Productivity Monitoring Dashboard; Code for monitoring app - Google Chrome; Productivity Monitoring Dashboard; Code for monitoring app - Google Chrome; productivity-monitor – ActiveAppTracker.java; Productivity Monitoring Dashboard; Code for monitoring app - Google Chrome; productivity-monitor – ActiveAppTracker.java; Code for monitoring app - Google Chrome; productivity-monitor – ActiveAppTracker.java; Code for monitoring app - Google Chrome; Productivity Monitoring Dashboard; Code for monitoring app - Google Chrome; Productivity Monitoring Dashboard
-focusTime=00:00:00
-breakFrequency=0
-breakDuration=00:00:00
-keystrokes=175
-mouseClicks=21
