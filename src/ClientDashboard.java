@@ -1,108 +1,191 @@
 import javax.swing.*;
 import java.awt.*;
+import java.util.Objects;
 
 public class ClientDashboard extends JFrame {
 
     private final EfficiencyData efficiencyData;
     private final JLabel activeIdleLabel;
     private final JLabel efficiencyLabel;
-    private final JLabel focusTimeLabel;
     private final JLabel breakLabel;
     private final JLabel activityLabel;
-    private final AppUsagePanel appUsagePanel;  // New panel for app usage
+    private final AppUsagePanel appUsagePanel;
+    private final ActivityGraphPanel activityGraphPanel;  // Graph panel for activity data
 
     public ClientDashboard(EfficiencyData data) {
         this.efficiencyData = data;
 
-        // Apply UIManager customizations for a CSS-like style.
-        UIManager.put("TitledBorder.font", new Font("Arial", Font.BOLD, 14));
-        UIManager.put("TitledBorder.titleColor", new Color(60, 63, 65));
-        UIManager.put("Label.font", new Font("Verdana", Font.PLAIN, 12));
-        UIManager.put("Button.font", new Font("Verdana", Font.BOLD, 12));
-        UIManager.put("Panel.background", new Color(245, 245, 245));
+        // Setup modern UI styles.
+        UIManager.put("TitledBorder.font", new Font("Segoe UI", Font.BOLD, 14));
+        UIManager.put("TitledBorder.titleColor", new Color(45, 45, 45));
+        UIManager.put("Label.font", new Font("Segoe UI", Font.PLAIN, 13));
+        UIManager.put("Button.font", new Font("Segoe UI", Font.BOLD, 13));
+        UIManager.put("Panel.background", new Color(250, 250, 250));
         UIManager.put("Button.background", new Color(66, 133, 244));
         UIManager.put("Button.foreground", Color.WHITE);
 
         setTitle("Productivity Monitoring Dashboard");
-        setSize(900, 600);
+        setSize(1100, 750);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
-        setLayout(new BorderLayout());
+        setLayout(new BorderLayout(10, 10));
 
-        // Create the metrics panel with 2 rows x 3 columns.
+        // Header Panel (North) with icon, title, and welcome message.
+        JPanel headerPanel = new JPanel(new BorderLayout());
+        headerPanel.setBackground(new Color(66, 133, 244));
+        headerPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+
+        JLabel iconLabel = new JLabel();
+        try {
+            ImageIcon icon = new ImageIcon(Objects.requireNonNull(getClass().getResource("icon.png")));
+            iconLabel.setIcon(icon);
+        } catch (Exception e) {
+            iconLabel.setText("");
+        }
+        headerPanel.add(iconLabel, BorderLayout.WEST);
+
+        JPanel titlePanel = new JPanel(new BorderLayout());
+        titlePanel.setOpaque(false);
+        JLabel titleLabel = new JLabel("Productivity Dashboard");
+        titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 28));
+        titleLabel.setForeground(Color.WHITE);
+        titlePanel.add(titleLabel, BorderLayout.CENTER);
+        JLabel welcomeLabel = new JLabel("Welcome, User!", SwingConstants.RIGHT);
+        welcomeLabel.setFont(new Font("Segoe UI", Font.PLAIN, 16));
+        welcomeLabel.setForeground(Color.WHITE);
+        titlePanel.add(welcomeLabel, BorderLayout.SOUTH);
+        headerPanel.add(titlePanel, BorderLayout.CENTER);
+        add(headerPanel, BorderLayout.NORTH);
+
+        // Navigation Panel (West) with a button to show On-Task Apps and additional nav buttons.
+        JPanel navPanel = new JPanel();
+        navPanel.setLayout(new BoxLayout(navPanel, BoxLayout.Y_AXIS));
+        navPanel.setBackground(new Color(250, 250, 250));
+        navPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+
+        JButton showOnTaskAppsButton = new JButton("On-Task Apps");
+        showOnTaskAppsButton.setAlignmentX(Component.CENTER_ALIGNMENT);
+        showOnTaskAppsButton.setMaximumSize(new Dimension(150, 40));
+        showOnTaskAppsButton.addActionListener(e -> OnTaskAppsPanel.showOnTaskAppsDialog(this));
+        navPanel.add(showOnTaskAppsButton);
+        navPanel.add(Box.createVerticalStrut(20));
+
+        navPanel.add(createNavButton("Detailed Stats"));
+        navPanel.add(Box.createVerticalStrut(20));
+        navPanel.add(createNavButton("Settings"));
+        navPanel.add(Box.createVerticalGlue());
+        add(navPanel, BorderLayout.WEST);
+
+        // Main Metrics Panel (Center) with 2 rows x 3 columns.
         JPanel metricsPanel = new JPanel(new GridLayout(2, 3, 10, 10));
-        metricsPanel.setBorder(BorderFactory.createTitledBorder("Overall Metrics"));
+        metricsPanel.setOpaque(false);
+        metricsPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
-        // 1. Active vs. Idle Time
-        JPanel activeIdlePanel = new JPanel(new BorderLayout());
-        activeIdlePanel.setBorder(BorderFactory.createTitledBorder("Active vs Idle Time"));
+        JPanel activeIdlePanel = createStyledPanel("Active vs Idle Time");
         activeIdleLabel = new JLabel("", SwingConstants.CENTER);
+        activeIdleLabel.setFont(new Font("Segoe UI", Font.PLAIN, 16));
         activeIdlePanel.add(activeIdleLabel, BorderLayout.CENTER);
         metricsPanel.add(activeIdlePanel);
 
-        // 2. Overall Efficiency
-        JPanel efficiencyPanel = new JPanel(new BorderLayout());
-        efficiencyPanel.setBorder(BorderFactory.createTitledBorder("Overall Efficiency"));
+        JPanel efficiencyPanel = createStyledPanel("Overall Efficiency");
         efficiencyLabel = new JLabel("", SwingConstants.CENTER);
+        efficiencyLabel.setFont(new Font("Segoe UI", Font.PLAIN, 16));
         efficiencyPanel.add(efficiencyLabel, BorderLayout.CENTER);
         metricsPanel.add(efficiencyPanel);
 
-        // 3. Application Usage – replaced with AppUsagePanel.
-        appUsagePanel = new AppUsagePanel(efficiencyData);
+        appUsagePanel = new AppUsagePanel(efficiencyData) {
+            protected void showExpandedDialog() {
+                showAppUsageDialog();
+            }
+        };
+        appUsagePanel.setBorder(BorderFactory.createTitledBorder("Application Usage"));
         metricsPanel.add(appUsagePanel);
 
-        // 4. Focus Time
-        JPanel focusTimePanel = new JPanel(new BorderLayout());
-        focusTimePanel.setBorder(BorderFactory.createTitledBorder("Focus Time"));
-        focusTimeLabel = new JLabel("", SwingConstants.CENTER);
-        focusTimePanel.add(focusTimeLabel, BorderLayout.CENTER);
-        metricsPanel.add(focusTimePanel);
+        activityGraphPanel = new ActivityGraphPanel(efficiencyData);
+        JScrollPane graphScrollPane = new JScrollPane(activityGraphPanel,
+                JScrollPane.VERTICAL_SCROLLBAR_NEVER, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+        graphScrollPane.setBorder(BorderFactory.createTitledBorder("Activity Graph"));
+        metricsPanel.add(graphScrollPane);
 
-        // 5. Break Frequency & Duration
-        JPanel breakPanel = new JPanel(new BorderLayout());
-        breakPanel.setBorder(BorderFactory.createTitledBorder("Break Frequency & Duration"));
+        JPanel breakPanel = createStyledPanel("Break Frequency & Duration");
         breakLabel = new JLabel("", SwingConstants.CENTER);
+        breakLabel.setFont(new Font("Segoe UI", Font.PLAIN, 16));
         breakPanel.add(breakLabel, BorderLayout.CENTER);
         metricsPanel.add(breakPanel);
 
-        // 6. Keystroke & Mouse Activity
-        JPanel activityPanel = new JPanel(new BorderLayout());
-        activityPanel.setBorder(BorderFactory.createTitledBorder("Keystroke & Mouse Activity"));
+        JPanel activityPanel = createStyledPanel("Keystroke & Mouse Activity");
         activityLabel = new JLabel("", SwingConstants.CENTER);
+        activityLabel.setFont(new Font("Segoe UI", Font.PLAIN, 16));
         activityPanel.add(activityLabel, BorderLayout.CENTER);
         metricsPanel.add(activityPanel);
 
-        // Navigation panel with buttons.
-        JPanel buttonPanel = new JPanel(new FlowLayout());
-        buttonPanel.setBorder(BorderFactory.createTitledBorder("Navigation"));
-        JButton detailsButton = new JButton("Detailed Stats");
-        detailsButton.addActionListener(e ->
-                JOptionPane.showMessageDialog(ClientDashboard.this, "Detailed stats page not implemented."));
-        JButton settingsButton = new JButton("Settings");
-        settingsButton.addActionListener(e ->
-                JOptionPane.showMessageDialog(ClientDashboard.this, "Settings page not implemented."));
-        buttonPanel.add(detailsButton);
-        buttonPanel.add(settingsButton);
-
-        // Add panels to the main frame.
         add(metricsPanel, BorderLayout.CENTER);
-        add(buttonPanel, BorderLayout.SOUTH);
 
-        // Start a timer to refresh the dashboard UI every second.
+        // Timer to refresh the dashboard UI every second.
         Timer uiTimer = new Timer(1000, e -> updateLabels());
         uiTimer.start();
 
         setVisible(true);
     }
 
+    // Helper method to create a styled rounded panel.
+    private JPanel createStyledPanel(String title) {
+        RoundedPanel panel = new RoundedPanel(10);
+        panel.setBackground(Color.WHITE);
+        panel.setLayout(new BorderLayout());
+        panel.setBorder(BorderFactory.createTitledBorder(new RoundedBorder(10), title));
+        return panel;
+    }
+
+    // Helper method to create a navigation button.
+    private JButton createNavButton(String text) {
+        JButton button = new JButton(text);
+        button.setAlignmentX(Component.CENTER_ALIGNMENT);
+        button.setMaximumSize(new Dimension(150, 40));
+        button.addActionListener(e ->
+                JOptionPane.showMessageDialog(ClientDashboard.this, text + " page not implemented."));
+        return button;
+    }
+
+    // This method shows an expanded Application Usage dialog.
+    // It reads detailed usage from efficiencyData.getAppUsage() and displays it in a list.
+    private void showAppUsageDialog() {
+        JDialog dialog = new JDialog(this, "Application Usage", true);
+        dialog.setLayout(new BorderLayout(10, 10));
+        dialog.setSize(400, 400);
+        dialog.setLocationRelativeTo(this);
+
+        DefaultListModel<String> listModel = new DefaultListModel<>();
+        JList<String> usageList = new JList<>(listModel);
+        usageList.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        JScrollPane scrollPane = new JScrollPane(usageList);
+        scrollPane.setPreferredSize(new Dimension(350, 250));
+
+        // Populate the list from the detailed app usage stored in efficiencyData.
+        String usageStr = efficiencyData.getAppUsage();
+        if (usageStr == null || usageStr.trim().isEmpty()) {
+            listModel.addElement("No apps tracked");
+        } else {
+            String[] entries = usageStr.split(";");
+            for (String entry : entries) {
+                entry = entry.trim();
+                if (!entry.isEmpty()) {
+                    listModel.addElement(entry);
+                }
+            }
+        }
+
+        dialog.add(scrollPane, BorderLayout.CENTER);
+        dialog.setVisible(true);
+    }
+
     // Refresh all displayed metrics.
-    private void updateLabels() {
+    void updateLabels() {
         activeIdleLabel.setText("<html>Active Time: " + efficiencyData.getActiveTime() +
                 "<br>Idle Time: " + efficiencyData.getIdleTime() + "</html>");
         efficiencyLabel.setText(efficiencyData.getOverallEfficiency());
-        // Refresh the app usage tile.
         appUsagePanel.updateData();
-        focusTimeLabel.setText(efficiencyData.getFocusTime());
+        activityGraphPanel.updateData();
         breakLabel.setText("<html>Break Frequency: " + efficiencyData.getBreakFrequency() +
                 "<br>Break Duration: " + efficiencyData.getBreakDuration() + "</html>");
         activityLabel.setText("<html>Keystrokes: " + efficiencyData.getKeystrokes() +

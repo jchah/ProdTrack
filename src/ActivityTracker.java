@@ -14,11 +14,11 @@ public class ActivityTracker implements java.awt.event.AWTEventListener {
     public ActivityTracker(EfficiencyData data) {
         this.efficiencyData = data;
         // Initialize active and idle times from the file.
-        this.activeTime = parseTime(data.getActiveTime());
-        this.idleTime = parseTime(data.getIdleTime());
+        this.activeTime = parseTime(efficiencyData.getActiveTime());
+        this.idleTime = parseTime(efficiencyData.getIdleTime());
         lastActivityTime = System.currentTimeMillis();
 
-        // Register for local key, mouse, and mouse motion events (for active/idle tracking).
+        // Register for local key, mouse, and mouse motion events.
         Toolkit.getDefaultToolkit().addAWTEventListener(this,
                 AWTEvent.KEY_EVENT_MASK | AWTEvent.MOUSE_EVENT_MASK | AWTEvent.MOUSE_MOTION_EVENT_MASK);
 
@@ -26,7 +26,6 @@ public class ActivityTracker implements java.awt.event.AWTEventListener {
         timer.start();
     }
 
-    // Called every second.
     private void updateTimes() {
         long currentTime = System.currentTimeMillis();
         long elapsedSinceLastActivity = currentTime - lastActivityTime;
@@ -35,11 +34,9 @@ public class ActivityTracker implements java.awt.event.AWTEventListener {
         } else {
             activeTime += 1000;
         }
-        // Update EfficiencyData with active/idle times.
         efficiencyData.setActiveTime(formatTime(activeTime));
         efficiencyData.setIdleTime(formatTime(idleTime));
 
-        // Note: Keystroke and mouse click counts will be updated by the global tracker.
         String filePath = "efficiency.txt";
         EfficiencyFileUpdater.updateEfficiencyFile(filePath, efficiencyData);
     }
@@ -58,13 +55,9 @@ public class ActivityTracker implements java.awt.event.AWTEventListener {
     }
 
     public static long parseTime(String timeStr) {
-        if (timeStr == null || timeStr.isEmpty()) {
-            return 0;
-        }
+        if (timeStr == null || timeStr.isEmpty()) return 0;
         String[] parts = timeStr.split(":");
-        if (parts.length != 3) {
-            return 0;
-        }
+        if (parts.length != 3) return 0;
         try {
             int hours = Integer.parseInt(parts[0]);
             int minutes = Integer.parseInt(parts[1]);

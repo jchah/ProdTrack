@@ -3,7 +3,7 @@ import java.awt.*;
 import java.util.*;
 import java.util.List;
 
-public class AppUsagePanel extends JPanel {
+public abstract class AppUsagePanel extends JPanel {
     private final JLabel topAppLabel;
     private final EfficiencyData efficiencyData;
 
@@ -24,33 +24,28 @@ public class AppUsagePanel extends JPanel {
         updateData();
     }
 
-    // Call this method to refresh the tile with the latest usage data.
+    // Refresh the display: show the app with the most time and its usage.
     public void updateData() {
-        // Parse the current appUsage string into a map.
         Map<String, Long> usageMap = parseAppUsage(efficiencyData.getAppUsage());
         if (usageMap.isEmpty()) {
             topAppLabel.setText("No app usage data");
             return;
         }
-
-        // Sort entries descending by accumulated time.
-        List<Map.Entry<String, Long>> sortedList = new ArrayList<>(usageMap.entrySet());
-        sortedList.sort((a, b) -> Long.compare(b.getValue(), a.getValue()));
-
-        Map.Entry<String, Long> topEntry = sortedList.get(0);
+        // Find the app with the maximum usage.
+        Map.Entry<String, Long> topEntry = Collections.max(usageMap.entrySet(),
+                Comparator.comparingLong(Map.Entry::getValue));
         String topApp = topEntry.getKey();
         String topTime = formatTime(topEntry.getValue());
         topAppLabel.setText("<html>" + topApp + "<br>" + topTime + "</html>");
     }
 
-    // Displays a dialog with a sorted list of all app usage.
+    // Displays a dialog with a sorted list of all apps and their usage times.
     private void showAllApps() {
         Map<String, Long> usageMap = parseAppUsage(efficiencyData.getAppUsage());
         if (usageMap.isEmpty()) {
             JOptionPane.showMessageDialog(this, "No app usage data available.");
             return;
         }
-
         List<Map.Entry<String, Long>> sortedList = new ArrayList<>(usageMap.entrySet());
         sortedList.sort((a, b) -> Long.compare(b.getValue(), a.getValue()));
 
@@ -61,7 +56,6 @@ public class AppUsagePanel extends JPanel {
                     .append(formatTime(entry.getValue()))
                     .append("\n");
         }
-
         JTextArea textArea = new JTextArea(sb.toString());
         textArea.setEditable(false);
         textArea.setFont(new Font("Verdana", Font.PLAIN, 14));
@@ -70,7 +64,8 @@ public class AppUsagePanel extends JPanel {
         JOptionPane.showMessageDialog(this, scrollPane, "All App Usage", JOptionPane.INFORMATION_MESSAGE);
     }
 
-    // Parses a string in the format "AppName: hh:mm:ss; AppName2: hh:mm:ss" into a map.
+    // Helper: Parse the app usage string into a Map. The expected format is
+    // "AppName: hh:mm:ss; AppName2: hh:mm:ss".
     private Map<String, Long> parseAppUsage(String usage) {
         Map<String, Long> map = new HashMap<>();
         if (usage == null || usage.trim().isEmpty()) return map;
@@ -78,19 +73,19 @@ public class AppUsagePanel extends JPanel {
         for (String entry : entries) {
             entry = entry.trim();
             if (entry.isEmpty()) continue;
-            String[] parts = entry.split("\\s*:\\s*", 2);
+            String[] parts = entry.split(":", 2);
             if (parts.length == 2) {
                 String appName = parts[0].trim();
-                long timeMs = parseTime(parts[1].trim());
+                String timeStr = parts[1].trim();
+                long timeMs = parseTime(timeStr);
                 map.put(appName, timeMs);
             }
         }
         return map;
     }
 
-    // Converts a time string hh:mm:ss into milliseconds.
+    // Helper: Convert a time string hh:mm:ss into milliseconds.
     private long parseTime(String timeStr) {
-        if (timeStr == null || timeStr.isEmpty()) return 0;
         String[] parts = timeStr.split(":");
         if (parts.length != 3) return 0;
         try {
@@ -103,12 +98,14 @@ public class AppUsagePanel extends JPanel {
         }
     }
 
-    // Formats milliseconds as hh:mm:ss.
+    // Helper: Format milliseconds as hh:mm:ss.
     private String formatTime(long ms) {
-        long seconds = ms / 1000;
-        long hours = seconds / 3600;
-        long minutes = (seconds % 3600) / 60;
-        long secs = seconds % 60;
-        return String.format("%02d:%02d:%02d", hours, minutes, secs);
+        long totalSeconds = ms / 1000;
+        long hours = totalSeconds / 3600;
+        long minutes = (totalSeconds % 3600) / 60;
+        long seconds = totalSeconds % 60;
+        return String.format("%02d:%02d:%02d", hours, minutes, seconds);
     }
+
+    protected abstract void showExpandedDialog();
 }

@@ -13,8 +13,6 @@ public class EfficiencyFileUpdater {
             writer.newLine();
             writer.write("appUsage=" + data.getAppUsage());
             writer.newLine();
-            writer.write("focusTime=" + data.getFocusTime());
-            writer.newLine();
             writer.write("breakFrequency=" + data.getBreakFrequency());
             writer.newLine();
             writer.write("breakDuration=" + data.getBreakDuration());
@@ -22,6 +20,8 @@ public class EfficiencyFileUpdater {
             writer.write("keystrokes=" + data.getKeystrokes());
             writer.newLine();
             writer.write("mouseClicks=" + data.getMouseClicks());
+            writer.newLine();
+            writer.write("graphPoints=" + data.getGraphPoints());
             writer.newLine();
         } catch (IOException e) {
             e.printStackTrace();

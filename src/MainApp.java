@@ -17,9 +17,6 @@ public class MainApp {
         if (data.getAppUsage() == null) {
             data.setAppUsage("");
         }
-        if (data.getFocusTime() == null) {
-            data.setFocusTime("00:00:00");
-        }
         if (data.getBreakFrequency() == null) {
             data.setBreakFrequency("0");
         }
@@ -32,6 +29,9 @@ public class MainApp {
         if (data.getMouseClicks() == null) {
             data.setMouseClicks("0");
         }
+        if (data.getGraphPoints() == null) {
+            data.setGraphPoints(""); // Start with an empty series.
+        }
 
         // Start local activity tracking (active/idle time).
         new ActivityTracker(data);
@@ -41,12 +41,10 @@ public class MainApp {
         long initialMouseClicks = 0;
         try {
             initialKeystrokes = Long.parseLong(data.getKeystrokes());
-        } catch (NumberFormatException ignored) {
-        }
+        } catch (NumberFormatException ignored) { }
         try {
             initialMouseClicks = Long.parseLong(data.getMouseClicks());
-        } catch (NumberFormatException ignored) {
-        }
+        } catch (NumberFormatException ignored) { }
 
         // Start global activity tracking for keystrokes and mouse clicks.
         GlobalActivityTracker globalTracker = new GlobalActivityTracker();
@@ -55,7 +53,6 @@ public class MainApp {
         long finalInitialKeystrokes = initialKeystrokes;
         long finalInitialMouseClicks = initialMouseClicks;
         Timer globalUpdateTimer = new Timer(1000, e -> {
-            // Add new global events to the initial counts.
             long newKeystrokes = finalInitialKeystrokes + globalTracker.getKeystrokeCount();
             long newMouseClicks = finalInitialMouseClicks + globalTracker.getMouseClickCount();
             data.setKeystrokes(Long.toString(newKeystrokes));
@@ -63,6 +60,25 @@ public class MainApp {
             EfficiencyFileUpdater.updateEfficiencyFile("efficiency.txt", data);
         });
         globalUpdateTimer.start();
+
+        // --- New: Timer to update the activity graph every 10 seconds ---
+        final long[] previousCombinedCount = {globalTracker.getKeystrokeCount() + globalTracker.getMouseClickCount()};
+        Timer graphTimer = new Timer(10000, e -> {  // 10,000 ms = 10 seconds
+            long currentCombined = globalTracker.getKeystrokeCount() + globalTracker.getMouseClickCount();
+            long diff = currentCombined - previousCombinedCount[0];
+            previousCombinedCount[0] = currentCombined;
+
+            // Append the new diff value to the graphPoints series (even if diff is 0).
+            String currentSeries = data.getGraphPoints();
+            if (currentSeries == null || currentSeries.isEmpty()) {
+                data.setGraphPoints(Long.toString(diff));
+            } else {
+                data.setGraphPoints(currentSeries + "," + diff);
+            }
+            EfficiencyFileUpdater.updateEfficiencyFile("efficiency.txt", data);
+        });
+        graphTimer.start();
+
 
         // Start tracking the active application.
         ActiveAppTracker activeAppTracker = new ActiveAppTracker(data);

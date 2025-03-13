@@ -17,17 +17,16 @@ public class EfficiencyDataLoader {
                         case "idleTime" -> data.setIdleTime(value);
                         case "overallEfficiency" -> data.setOverallEfficiency(value);
                         case "appUsage" -> data.setAppUsage(value);
-                        case "focusTime" -> data.setFocusTime(value);
                         case "breakFrequency" -> data.setBreakFrequency(value);
                         case "breakDuration" -> data.setBreakDuration(value);
                         case "keystrokes" -> data.setKeystrokes(value);
                         case "mouseClicks" -> data.setMouseClicks(value);
+                        case "graphPoints" -> data.setGraphPoints(value);
                         default -> System.out.println("Unknown key: " + key);
                     }
                 }
             }
-        } catch (IOException ignored) {
-        }
+        } catch (IOException ignored) { }
         return data;
     }
 }
